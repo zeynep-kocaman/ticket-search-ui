@@ -20,7 +20,7 @@ export async function middleware(request: NextRequest) {
   // Verify basic auth
   if (authHeader?.startsWith('Basic ')) {
     const credentials = Buffer.from(authHeader.slice(6), 'base64').toString('utf-8');
-    const [username, password] = credentials.split(':');
+    const password = credentials.split(':')[1];
 
     if (password === expectedPassword) {
       return NextResponse.next();
