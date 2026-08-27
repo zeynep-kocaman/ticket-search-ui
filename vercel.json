@@ -4,7 +4,7 @@
   "installCommand": "npm install",
   "framework": "nextjs",
   "env": {
-    "ALLOWED_USERS": "user@enpal.com,admin@enpal.com"
+    "ALLOWED_USERS": "user@enpal.com,admin@enpal.com",
     "BASIC_AUTH_PASSWORD":
   },
   "headers": [
