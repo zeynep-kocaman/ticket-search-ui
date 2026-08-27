@@ -19,48 +19,8 @@ type Payload = {
   sources?: Ticket[];
 };
 
-const sampleResponse: Payload = {
-  success: true,
-  answer:
-    'In prior tickets reporting the same screen-flickering issue, two were closed with terse resolution notes, while the other three similar reports have no resolution recorded. [Ticket 1650, 613, 376, 1153, 1193]',
-  retrieved_count: 20,
-  reranked_count: 5,
-  source_tickets: [1650, 613, 376, 1153, 1193],
-  sources: [
-    {
-      ticket_id: 1650,
-      description:
-        'Customer reports the display keeps flickering intermittently, especially after the device wakes from sleep.',
-      resolution: 'Sit where finish may',
-    },
-    {
-      ticket_id: 613,
-      description:
-        'Screen flickers when brightness is adjusted. Issue persists across restarts.',
-      resolution: 'Share phone dream list citizen green sport fact',
-    },
-    {
-      ticket_id: 376,
-      description: 'Intermittent screen flicker reported shortly after installation.',
-      resolution: null,
-    },
-    {
-      ticket_id: 1153,
-      description: 'Display flickering observed during extended use. No error message shown.',
-      resolution: null,
-    },
-    {
-      ticket_id: 1193,
-      description: 'Customer describes flickering screen and occasional black frames.',
-      resolution: null,
-    },
-  ],
-  note: 'This is a draft for human review — verify before sending to a customer.',
-};
-
 export default function Home() {
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
-  const [mode, setMode] = useState<'demo' | 'api'>('demo');
   const [query, setQuery] = useState('');
   const [endpoint, setEndpoint] = useState('');
   const [apiKey, setApiKey] = useState('');
@@ -98,36 +58,31 @@ export default function Home() {
     setOpenTicket(null);
 
     try {
-      if (mode === 'api') {
-        if (!endpoint.trim()) throw new Error('Add the POST endpoint first.');
-        if (!apiKey.trim()) throw new Error('Add your Supabase anon key first.');
+      if (!endpoint.trim()) throw new Error('Add the POST endpoint first.');
+      if (!apiKey.trim()) throw new Error('Add your Supabase anon key first.');
 
-        const response = await fetch(endpoint.trim(), {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            apikey: apiKey.trim(),
-            Authorization: `Bearer ${apiKey.trim()}`,
-          },
-          body: JSON.stringify({ query: clean }),
-        });
+      const response = await fetch(endpoint.trim(), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: apiKey.trim(),
+          Authorization: `Bearer ${apiKey.trim()}`,
+        },
+        body: JSON.stringify({ query: clean }),
+      });
 
-        if (response.status === 401) {
-          throw new Error('Rejected (401). Check that the anon key is complete and belongs to this project.');
-        }
-        if (!response.ok) {
-          throw new Error(`Request failed (${response.status}).`);
-        }
-
-        const payload: Payload = await response.json();
-        if (payload.success === false || payload.error) {
-          throw new Error(payload.error || 'The search service returned an error.');
-        }
-        setResult(payload);
-      } else {
-        await new Promise((r) => setTimeout(r, 300));
-        setResult(sampleResponse);
+      if (response.status === 401) {
+        throw new Error('Rejected (401). Check that the anon key is complete and belongs to this project.');
       }
+      if (!response.ok) {
+        throw new Error(`Request failed (${response.status}).`);
+      }
+
+      const payload: Payload = await response.json();
+      if (payload.success === false || payload.error) {
+        throw new Error(payload.error || 'The search service returned an error.');
+      }
+      setResult(payload);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Could not draft an answer.';
       setToast(
@@ -154,18 +109,6 @@ export default function Home() {
           <h1 className="title">Drafting Tool</h1>
         </div>
         <div className="theme-controls">
-          <div className="mode-wrap">
-            <label className="mode-label" htmlFor="modeSelect">Mode</label>
-            <select
-              id="modeSelect"
-              className="mode-select"
-              value={mode}
-              onChange={(e) => setMode(e.target.value as 'demo' | 'api')}
-            >
-              <option value="demo">Demo</option>
-              <option value="api">API</option>
-            </select>
-          </div>
           <button
             className="theme-toggle"
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
@@ -176,8 +119,7 @@ export default function Home() {
       </div>
 
       <p className="lede">
-        <strong>Draft support answers</strong> by searching your knowledge base. Configure a
-        Supabase endpoint to run live queries—otherwise, the demo shows sample results.
+        <strong>Draft support answers</strong> by searching your knowledge base through your Supabase API.
       </p>
 
       <div className="search-card">
@@ -201,34 +143,31 @@ export default function Home() {
           </button>
         </div>
 
-        {mode === 'api' && (
-          <div className="api-panel">
-            <label htmlFor="apiEndpoint">Supabase Endpoint</label>
-            <input
-              id="apiEndpoint"
-              type="url"
-              placeholder="https://project.supabase.co/functions/v1/your-edge-function"
-              autoComplete="off"
-              value={endpoint}
-              onChange={(e) => setEndpoint(e.target.value)}
-            />
+        <div className="api-panel">
+          <label htmlFor="apiEndpoint">Supabase Endpoint</label>
+          <input
+            id="apiEndpoint"
+            type="url"
+            placeholder="https://project.supabase.co/functions/v1/your-edge-function"
+            autoComplete="off"
+            value={endpoint}
+            onChange={(e) => setEndpoint(e.target.value)}
+          />
 
-            <label htmlFor="apiKey" style={{ marginTop: 10 }}>Supabase Anon Key</label>
-            <input
-              id="apiKey"
-              type="password"
-              placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9…"
-              autoComplete="off"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-            />
+          <label htmlFor="apiKey" style={{ marginTop: 10 }}>Supabase Anon Key</label>
+          <input
+            id="apiKey"
+            type="password"
+            placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9…"
+            autoComplete="off"
+            value={apiKey}
+            onChange={(e) => setApiKey(e.target.value)}
+          />
 
-            <div className="api-help">
-              The anon key is sent from the browser. Make sure your Supabase Row Level Security
-              policies restrict what it can read. Never paste a <code>service_role</code> key here.
-            </div>
+          <div className="api-help">
+            Configure your Supabase endpoint and anon key to search your knowledge base.
           </div>
-        )}
+        </div>
       </div>
 
       {!result && (
