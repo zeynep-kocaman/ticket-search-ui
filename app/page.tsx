@@ -106,7 +106,7 @@ export default function Home() {
       <div className="topbar">
         <div>
           <div className="kicker">Customer Support AI</div>
-          <h1 className="title">Drafting Tool</h1>
+          <h1 className="title">Ticket Search</h1>
         </div>
         <div className="theme-controls">
           <button
@@ -119,7 +119,7 @@ export default function Home() {
       </div>
 
       <p className="lede">
-        <strong>Draft support answers</strong> by searching your knowledge base through your Supabase API.
+        Find resolutions to similar tickets by searching the knowledge base.
       </p>
 
       <div className="search-card">
