@@ -247,6 +247,7 @@ export default function Home() {
               <div className="search-input-wrap" style={{ display: 'flex', alignItems: 'center' }}>
                 <input
                   id="semanticQuery"
+                  style={{ border: 'none' }}
                   type="text"
                   placeholder="Describe the customer's issue…"
                   autoComplete="off"
@@ -266,6 +267,7 @@ export default function Home() {
               <label htmlFor="threshold">Similarity Threshold</label>
               <input
                 id="threshold"
+                style={{ border: 'none' }}
                 type="text"
                 inputMode="decimal"
                 value={threshold}
@@ -349,6 +351,7 @@ export default function Home() {
               <div className="search-input-wrap" style={{ display: 'flex', alignItems: 'center' }}>
                 <input
                   id="hybridQuery"
+                  style={{ border: 'none' }}
                   type="text"
                   placeholder="Describe the customer's issue…"
                   autoComplete="off"
@@ -368,6 +371,7 @@ export default function Home() {
               <label htmlFor="matchCount">Result Count</label>
               <input
                 id="matchCount"
+                style={{ border: 'none' }}
                 type="text"
                 inputMode="numeric"
                 value={matchCount}
@@ -377,6 +381,7 @@ export default function Home() {
               <label htmlFor="semanticWeight" style={{ marginTop: 10 }}>Semantic Weight</label>
               <input
                 id="semanticWeight"
+                style={{ border: 'none' }}
                 type="text"
                 inputMode="decimal"
                 value={semanticWeight}
@@ -386,6 +391,7 @@ export default function Home() {
               <label htmlFor="fullTextWeight" style={{ marginTop: 10 }}>Keyword Weight</label>
               <input
                 id="fullTextWeight"
+                style={{ border: 'none' }}
                 type="text"
                 inputMode="decimal"
                 value={fullTextWeight}
