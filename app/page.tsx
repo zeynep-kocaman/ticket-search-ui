@@ -19,13 +19,15 @@ type Payload = {
 };
 
 export default function Home() {
+  const endpoint = process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_URL ?? '';
+  const apiKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '';
+
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
   const [query, setQuery] = useState('');
   const [threshold, setThreshold] = useState('0.84');
-  const [endpoint, setEndpoint] = useState('');
-  const [apiKey, setApiKey] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<Payload | null>(null);
+  const [openTickets, setOpenTickets] = useState<Set<string>>(new Set());
   const [toast, setToast] = useState('');
 
   // Read stored theme after mount to avoid hydration mismatch
@@ -54,10 +56,11 @@ export default function Home() {
     }
 
     setLoading(true);
+    setOpenTickets(new Set());
 
     try {
-      if (!endpoint.trim()) throw new Error('Add the POST endpoint first.');
-      if (!apiKey.trim()) throw new Error('Add your Supabase anon key first.');
+      if (!endpoint.trim()) throw new Error('Missing NEXT_PUBLIC_SUPABASE_FUNCTION_URL — check your .env config.');
+      if (!apiKey.trim()) throw new Error('Missing NEXT_PUBLIC_SUPABASE_ANON_KEY — check your .env config.');
 
       const parsedThreshold = parseFloat(threshold);
 
@@ -143,27 +146,7 @@ export default function Home() {
         </div>
 
         <div className="api-panel">
-          <label htmlFor="apiEndpoint">Supabase Endpoint</label>
-          <input
-            id="apiEndpoint"
-            type="url"
-            placeholder="https://project.supabase.co/functions/v1/search-tickets"
-            autoComplete="off"
-            value={endpoint}
-            onChange={(e) => setEndpoint(e.target.value)}
-          />
-
-          <label htmlFor="apiKey" style={{ marginTop: 10 }}>Supabase Anon Key</label>
-          <input
-            id="apiKey"
-            type="password"
-            placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9…"
-            autoComplete="off"
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-          />
-
-          <label htmlFor="threshold" style={{ marginTop: 10 }}>Similarity Threshold</label>
+          <label htmlFor="threshold">Similarity Threshold</label>
           <input
             id="threshold"
             type="number"
@@ -175,7 +158,7 @@ export default function Home() {
           />
 
           <div className="api-help">
-            Configure your Supabase endpoint and anon key to search your knowledge base.
+            Adjust how closely a past ticket must match to be shown.
           </div>
         </div>
       </div>
@@ -199,22 +182,43 @@ export default function Home() {
                 {tickets.length === 0 && (
                   <span className="source-ticket">No similar tickets found above this threshold.</span>
                 )}
-                {tickets.map((ticket) => (
-                  <div key={ticket.conv_id} className="ticket-detail" style={{ width: '100%' }}>
-                    <div className="detail-head">
-                      <span className="detail-id">Ticket {ticket.conv_id}</span>
-                      <span className="meta">
-                        Similarity <b>{(ticket.similarity * 100).toFixed(1)}%</b>
-                      </span>
+                {tickets.map((ticket) => {
+                  const isOpen = openTickets.has(ticket.conv_id);
+                  return (
+                    <div key={ticket.conv_id} className="ticket-detail" style={{ width: '100%' }}>
+                      <button
+                        className="detail-head"
+                        style={{ width: '100%', cursor: 'pointer', background: 'none', border: 'none' }}
+                        aria-expanded={isOpen}
+                        onClick={() =>
+                          setOpenTickets((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(ticket.conv_id)) {
+                              next.delete(ticket.conv_id);
+                            } else {
+                              next.add(ticket.conv_id);
+                            }
+                            return next;
+                          })
+                        }
+                      >
+                        <span className="detail-id">Ticket {ticket.conv_id}</span>
+                        <span className="meta">
+                          Similarity <b>{(ticket.similarity * 100).toFixed(1)}%</b>
+                        </span>
+                      </button>
+
+                      {isOpen && (
+                        <div className="detail-field">
+                          <div className="detail-label">Message</div>
+                          <div className={`detail-value${ticket.new_message ? '' : ' empty'}`}>
+                            {ticket.new_message || 'No message recorded.'}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    <div className="detail-field">
-                      <div className="detail-label">Message</div>
-                      <div className={`detail-value${ticket.new_message ? '' : ' empty'}`}>
-                        {ticket.new_message || 'No message recorded.'}
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
