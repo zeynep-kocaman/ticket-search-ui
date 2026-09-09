@@ -244,8 +244,7 @@ export default function Home() {
         <>
           <div className="search-card">
             <div className="search-row">
-              <div className="search-input-wrap">
-                <span aria-hidden="true">🔍</span>
+              <div className="search-input-wrap" style={{ display: 'flex', alignItems: 'center' }}>
                 <input
                   id="semanticQuery"
                   type="text"
@@ -267,12 +266,10 @@ export default function Home() {
               <label htmlFor="threshold">Similarity Threshold</label>
               <input
                 id="threshold"
-                type="number"
-                step="0.01"
-                min="0"
-                max="1"
+                type="text"
+                inputMode="decimal"
                 value={threshold}
-                onChange={(e) => setThreshold(e.target.value)}
+                onChange={(e) => setThreshold(e.target.value.replace(',', '.'))}
               />
 
               <div className="api-help">
@@ -349,8 +346,7 @@ export default function Home() {
         <>
           <div className="search-card">
             <div className="search-row">
-              <div className="search-input-wrap">
-                <span aria-hidden="true">🔍</span>
+              <div className="search-input-wrap" style={{ display: 'flex', alignItems: 'center' }}>
                 <input
                   id="hybridQuery"
                   type="text"
@@ -372,32 +368,28 @@ export default function Home() {
               <label htmlFor="matchCount">Result Count</label>
               <input
                 id="matchCount"
-                type="number"
-                step="1"
-                min="1"
-                max="100"
+                type="text"
+                inputMode="numeric"
                 value={matchCount}
-                onChange={(e) => setMatchCount(e.target.value)}
+                onChange={(e) => setMatchCount(e.target.value.replace(/[^0-9]/g, ''))}
               />
 
               <label htmlFor="semanticWeight" style={{ marginTop: 10 }}>Semantic Weight</label>
               <input
                 id="semanticWeight"
-                type="number"
-                step="0.1"
-                min="0"
+                type="text"
+                inputMode="decimal"
                 value={semanticWeight}
-                onChange={(e) => setSemanticWeight(e.target.value)}
+                onChange={(e) => setSemanticWeight(e.target.value.replace(',', '.'))}
               />
 
               <label htmlFor="fullTextWeight" style={{ marginTop: 10 }}>Keyword Weight</label>
               <input
                 id="fullTextWeight"
-                type="number"
-                step="0.1"
-                min="0"
+                type="text"
+                inputMode="decimal"
                 value={fullTextWeight}
-                onChange={(e) => setFullTextWeight(e.target.value)}
+                onChange={(e) => setFullTextWeight(e.target.value.replace(',', '.'))}
               />
 
               <div className="api-help">
