@@ -31,16 +31,6 @@ const nextConfig = {
         ]
       }
     ];
-  },
-  // Redirect HTTP to HTTPS on production
-  async redirects() {
-    return [
-      {
-        source: '/',
-        destination: '/',
-        permanent: false,
-      }
-    ];
   }
 };
 
