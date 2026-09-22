@@ -140,9 +140,9 @@ export default function Home() {
             .answer-title { color: var(--blue); text-transform: uppercase; letter-spacing: .14em; font-size: 10px; font-weight: 750; }
             .answer-badge { color: var(--ink); background: rgba(255, 184, 28, .12); border: 1px solid rgba(255, 184, 28, .3); border-radius: 999px; padding: 5px 10px; font-size: 10px; white-space: nowrap; }
             .answer-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
-            .utility-btn { border: 1px solid var(--line); background: transparent; color: var(--muted); border-radius: 8px; padding: 7px 10px; font-size: 11px; font-weight: 650; transition: .18s ease; }
-            .utility-btn:hover:not([disabled]) { color: var(--ink); border-color: var(--blue); background: rgba(37, 99, 235, .06); }
-            .utility-btn[disabled] { opacity: .45; cursor: not-allowed; }
+            .export-btn { border: 1px solid var(--line); background: transparent; color: var(--muted); border-radius: 8px; padding: 7px 10px; font-size: 11px; font-weight: 650; transition: .18s ease; }
+            .export-btn:hover:not([disabled]) { color: var(--ink); border-color: var(--blue); background: rgba(37, 99, 235, .06); }
+            .export-btn[disabled] { opacity: .45; cursor: not-allowed; }
             .answer-text { font-size: 16px; line-height: 1.7; }
             .answer-note { display: flex; gap: 9px; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; line-height: 1.55; }
             .answer-note i { font-style: normal; color: var(--orange); }
@@ -150,28 +150,6 @@ export default function Home() {
             .meta-row { display: flex; flex-wrap: wrap; gap: 10px 26px; align-items: baseline; margin-top: 18px; padding: 14px 2px 0; border-top: 1px solid var(--line); }
             .meta { color: var(--subtle); font-size: 10px; text-transform: uppercase; letter-spacing: .12em; }
             .meta b { color: var(--ink); font-size: 15px; letter-spacing: -.01em; margin-right: 6px; font-weight: 650; }
-
-            .insights-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 16px; }
-            .insight-card { border: 1px solid var(--line); background: rgba(37, 99, 235, .04); border-radius: 12px; padding: 12px; min-height: 82px; }
-            .insight-label { color: var(--subtle); font-size: 9px; text-transform: uppercase; letter-spacing: .12em; margin-bottom: 8px; }
-            .insight-value { font-size: 20px; font-weight: 750; letter-spacing: -.03em; }
-            .insight-copy { color: var(--muted); font-size: 11px; line-height: 1.45; margin-top: 5px; }
-            .keyword-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-            .keyword-chip { border: 1px solid var(--line); color: var(--muted); border-radius: 999px; padding: 4px 8px; font-size: 10px; }
-
-            .recent-panel { display: none; margin-top: 16px; border: 1px solid var(--line); background: var(--panel); border-radius: 15px; padding: 16px; }
-            .recent-panel.visible { display: block; animation: rise .24s both; }
-            .section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
-            .section-title { color: var(--subtle); text-transform: uppercase; letter-spacing: .13em; font-size: 10px; font-weight: 750; }
-            .section-note { color: var(--subtle); font-size: 11px; }
-            .recent-list { display: grid; gap: 10px; }
-            .recent-item { width: 100%; text-align: left; border: 1px solid var(--line); background: transparent; color: var(--ink); border-radius: 12px; padding: 12px; transition: .18s ease; }
-            .recent-item:hover { border-color: var(--blue); background: rgba(37, 99, 235, .05); transform: translateY(-1px); }
-            .recent-top { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; margin-bottom: 6px; }
-            .recent-query { font-size: 13px; font-weight: 700; line-height: 1.35; }
-            .recent-time { color: var(--subtle); font-size: 10px; white-space: nowrap; }
-            .recent-preview { color: var(--muted); font-size: 12px; line-height: 1.5; margin-bottom: 8px; }
-            .recent-tickets { display: flex; gap: 6px; flex-wrap: wrap; color: var(--blue); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px; }
 
             .sources { margin-top: 16px; }
             .sources h2 { margin: 0 0 10px; font-size: 10px; text-transform: uppercase; letter-spacing: .13em; color: var(--subtle); font-weight: 650; }
@@ -200,8 +178,6 @@ export default function Home() {
               .answer-panel { padding: 16px; }
               .answer-header { align-items: flex-start; flex-direction: column; }
               .answer-actions { justify-content: flex-start; }
-              .insights-grid { grid-template-columns: 1fr; }
-              .recent-top { flex-direction: column; gap: 3px; }
             }
           `}</style>
         </head>
@@ -265,14 +241,6 @@ export default function Home() {
               </div>
             </form>
 
-            <section id="recentPanel" className="recent-panel" aria-live="polite">
-              <div className="section-head">
-                <div className="section-title">Recent Searches</div>
-                <div className="section-note">Latest 2 with answer previews and cited tickets</div>
-              </div>
-              <div id="recentList" className="recent-list"></div>
-            </section>
-
             <div id="placeholder" style={{ marginTop: '40px' }}>
               <p style={{ color: 'var(--subtle)', fontSize: '13px', lineHeight: 1.6 }}>
                 Enter a support issue above to generate an answer draft. Results will appear here with relevant ticket citations.
@@ -284,8 +252,7 @@ export default function Home() {
                 <div className="answer-header">
                   <div className="answer-title">Draft</div>
                   <div className="answer-actions">
-                    <button id="copyAnswerBtn" type="button" className="utility-btn">Copy draft</button>
-                    <button id="exportCsvBtn" type="button" className="utility-btn" disabled>Export CSV</button>
+                    <button id="exportCsvBtn" type="button" className="export-btn" disabled>Export CSV</button>
                     <span className="answer-badge">Generated Answer</span>
                   </div>
                 </div>
@@ -298,23 +265,6 @@ export default function Home() {
                   <div className="meta">Retrieved <b id="statRetrieved">—</b></div>
                   <div className="meta">Reranked <b id="statReranked">—</b></div>
                   <div className="meta">Sources <b id="statSources">—</b></div>
-                </div>
-
-                <div className="insights-grid" aria-label="Search analytics">
-                  <div className="insight-card">
-                    <div className="insight-label">Coverage</div>
-                    <div id="insightCoverage" className="insight-value">—</div>
-                    <div id="insightCoverageCopy" className="insight-copy">How much of the retrieved set made it into citations.</div>
-                  </div>
-                  <div className="insight-card">
-                    <div className="insight-label">Resolution Fill</div>
-                    <div id="insightResolution" className="insight-value">—</div>
-                    <div className="insight-copy">Share of cited tickets with resolution text.</div>
-                  </div>
-                  <div className="insight-card">
-                    <div className="insight-label">Query Signals</div>
-                    <div id="insightKeywords" className="keyword-list"></div>
-                  </div>
                 </div>
 
                 <div className="sources">
@@ -335,12 +285,9 @@ export default function Home() {
             const placeholder = document.getElementById('placeholder');
             const button = document.querySelector('.search-btn');
             const themeToggle = document.getElementById('themeToggle');
-            const recentPanel = document.getElementById('recentPanel');
-            const recentList = document.getElementById('recentList');
             const exportCsvBtn = document.getElementById('exportCsvBtn');
-            const copyAnswerBtn = document.getElementById('copyAnswerBtn');
-            const RECENT_KEY = 'ticketSearch.recentSearches.v1';
-            let currentSearch = null;
+            let currentPayload = null;
+            let currentQuery = '';
 
             // Theme toggle
             function initTheme() {
@@ -367,125 +314,19 @@ export default function Home() {
               return String(value ?? '').replace(/[&<>'"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;' }[c]));
             }
 
-            function truncate(value, max = 150) {
-              const text = String(value ?? '').trim().replace(/\s+/g, ' ');
-              return text.length > max ? text.slice(0, max - 1) + '…' : text;
-            }
-
-            function getTicketId(ticket) {
-              return ticket?.ticket_id ?? ticket?.id ?? ticket?.Ticket_ID ?? ticket?.TicketID ?? ticket?.['Ticket ID'];
-            }
-
-            function getSources(payload) {
-              return Array.isArray(payload.sources) ? payload.sources : [];
-            }
-
-            function getTicketIds(payload) {
-              const ids = Array.isArray(payload.source_tickets) ? payload.source_tickets : [];
-              const sourceIds = getSources(payload).map(getTicketId).filter(Boolean);
-              return [...new Set([...ids, ...sourceIds].map(id => String(id)))];
-            }
-
-            function getTicketField(ticket, fields) {
-              for (const field of fields) {
-                if (ticket?.[field]) return ticket[field];
-              }
-              return null;
-            }
-
-            function normalizeSearch(query, payload) {
-              const tickets = getTicketIds(payload);
-              const sources = getSources(payload);
-              return {
-                query,
-                at: new Date().toISOString(),
-                payload: {
-                  answer: payload.answer || '',
-                  note: payload.note || '',
-                  retrieved_count: payload.retrieved_count ?? null,
-                  reranked_count: payload.reranked_count ?? null,
-                  source_tickets: tickets,
-                  sources
-                }
-              };
-            }
-
-            function loadRecentSearches() {
-              try {
-                const parsed = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]');
-                return Array.isArray(parsed) ? parsed.slice(0, 2) : [];
-              } catch {
-                return [];
-              }
-            }
-
-            function saveRecentSearch(search) {
-              const next = [search, ...loadRecentSearches().filter(item => item.query !== search.query)].slice(0, 2);
-              localStorage.setItem(RECENT_KEY, JSON.stringify(next));
-              renderRecentSearches();
-            }
-
-            function renderRecentSearches() {
-              const searches = loadRecentSearches();
-              if (!searches.length) {
-                recentPanel.classList.remove('visible');
-                recentList.innerHTML = '';
-                return;
-              }
-
-              recentPanel.classList.add('visible');
-              recentList.innerHTML = searches.map((item, index) => {
-                const tickets = getTicketIds(item.payload || {}).slice(0, 4);
-                const time = item.at ? new Date(item.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
-                return \`
-                  <button type="button" class="recent-item" data-recent-index="\${index}">
-                    <div class="recent-top">
-                      <div class="recent-query">\${escapeHtml(item.query)}</div>
-                      <div class="recent-time">\${escapeHtml(time)}</div>
-                    </div>
-                    <div class="recent-preview">\${escapeHtml(truncate(item.payload?.answer || 'No answer text captured yet.', 180))}</div>
-                    <div class="recent-tickets">\${tickets.length ? tickets.map(id => '<span>' + escapeHtml(id) + '</span>').join('') : '<span>No citations</span>'}</div>
-                  </button>\`;
-              }).join('');
-            }
-
-            function extractKeywords(query) {
-              const stopWords = new Set(['about','after','again','answer','could','customer','describe','does','from','have','help','into','issue','please','search','support','that','their','there','these','they','this','ticket','what','when','where','which','with','would','your']);
-              return [...new Set(String(query || '').toLowerCase().match(/[a-z0-9][a-z0-9-]{2,}/g) || [])]
-                .filter(word => !stopWords.has(word))
-                .slice(0, 5);
-            }
-
-            function renderInsights(query, payload, tickets) {
-              const retrieved = Number(payload.retrieved_count) || 0;
-              const coverage = retrieved && tickets.length ? Math.round((tickets.length / retrieved) * 100) : null;
-              const sources = getSources(payload);
-              const withResolution = sources.filter(ticket => getTicketField(ticket, ['resolution', 'Resolution', 'answer', 'Answer'])).length;
-              const resolutionFill = sources.length ? Math.round((withResolution / sources.length) * 100) : null;
-              const keywords = extractKeywords(query);
-
-              document.getElementById('insightCoverage').textContent = coverage === null ? '—' : coverage + '%';
-              document.getElementById('insightCoverageCopy').textContent = coverage === null
-                ? 'Coverage appears when retrieved count is returned.'
-                : tickets.length + ' cited from ' + retrieved + ' retrieved results.';
-              document.getElementById('insightResolution').textContent = resolutionFill === null ? '—' : resolutionFill + '%';
-              document.getElementById('insightKeywords').innerHTML = keywords.length
-                ? keywords.map(word => '<span class="keyword-chip">' + escapeHtml(word) + '</span>').join('')
-                : '<span class="insight-copy">No strong terms detected.</span>';
-            }
-
             function escapeCsv(value) {
               const text = String(value ?? '');
               return /[",\n\r]/.test(text) ? '"' + text.replace(/"/g, '""') + '"' : text;
             }
 
-            function exportCurrentSearchCsv() {
-              if (!currentSearch) { showToast('Run a search before exporting.'); return; }
-              const payload = currentSearch.payload;
-              const tickets = getTicketIds(payload);
+            function downloadCsv() {
+              if (!currentPayload) { showToast('Run a search before exporting.'); return; }
+
+              const tickets = Array.isArray(currentPayload.source_tickets) ? currentPayload.source_tickets : [];
+              const sources = Array.isArray(currentPayload.sources) ? currentPayload.sources : [];
               const sourcesById = {};
-              getSources(payload).forEach(ticket => {
-                const id = getTicketId(ticket);
+              sources.forEach(ticket => {
+                const id = ticket.ticket_id ?? ticket.id;
                 if (id) sourcesById[String(id)] = ticket;
               });
 
@@ -496,15 +337,15 @@ export default function Home() {
               (tickets.length ? tickets : ['']).forEach(id => {
                 const ticket = sourcesById[String(id)] || {};
                 rows.push([
-                  currentSearch.query,
-                  payload.answer || '',
-                  payload.note || '',
-                  payload.retrieved_count ?? '',
-                  payload.reranked_count ?? '',
+                  currentQuery,
+                  currentPayload.answer || '',
+                  currentPayload.note || '',
+                  currentPayload.retrieved_count ?? '',
+                  currentPayload.reranked_count ?? '',
                   tickets.length,
                   id,
-                  getTicketField(ticket, ['description', 'Ticket Description', 'summary', 'Summary']) || '',
-                  getTicketField(ticket, ['resolution', 'Resolution', 'answer', 'Answer']) || ''
+                  ticket.description ?? ticket['Ticket Description'] ?? '',
+                  ticket.resolution ?? ticket['Resolution'] ?? ''
                 ]);
               });
 
@@ -534,20 +375,19 @@ export default function Home() {
               ]
             };
 
-            function renderAnswer(payload, query = queryEl.value, remember = true) {
-              const tickets = getTicketIds(payload);
+            function renderAnswer(payload, query = queryEl.value) {
+              const tickets = Array.isArray(payload.source_tickets) ? payload.source_tickets : [];
+
+              currentPayload = payload;
+              currentQuery = query;
 
               ticketCache = {};
-              getSources(payload).forEach(t => {
-                const id = getTicketId(t);
-                if (!id) return;
-                ticketCache[String(id)] = {
-                  description: getTicketField(t, ['description', 'Ticket Description', 'summary', 'Summary']),
-                  resolution: getTicketField(t, ['resolution', 'Resolution', 'answer', 'Answer'])
+              (Array.isArray(payload.sources) ? payload.sources : []).forEach(t => {
+                ticketCache[String(t.ticket_id ?? t.id)] = {
+                  description: t.description ?? t['Ticket Description'] ?? null,
+                  resolution: t.resolution ?? t['Resolution'] ?? null
                 };
               });
-
-              currentSearch = normalizeSearch(query, payload);
 
               document.getElementById('answerText').textContent = payload.answer || 'No answer was returned for this query.';
               document.getElementById('answerNote').textContent = payload.note || 'Verify this draft before sending it to a customer.';
@@ -557,12 +397,10 @@ export default function Home() {
               document.getElementById('sourceList').innerHTML = tickets.length
                 ? tickets.map(id => \`<button type="button" class="source-ticket" data-ticket="\${escapeHtml(id)}" aria-expanded="false" aria-controls="ticketDetail">Ticket \${escapeHtml(id)}</button>\`).join('')
                 : '<span class="source-ticket">None cited</span>';
-              renderInsights(query, payload, tickets);
-              exportCsvBtn.disabled = false;
               closeDetail();
               placeholder.style.display = 'none';
               shell.classList.add('visible');
-              if (remember) saveRecentSearch(currentSearch);
+              exportCsvBtn.disabled = false;
             }
 
             let ticketCache = {};
@@ -614,35 +452,6 @@ export default function Home() {
               }
             });
 
-            recentList.addEventListener('click', event => {
-              const item = event.target.closest('.recent-item');
-              if (!item) return;
-              const recent = loadRecentSearches()[Number(item.dataset.recentIndex)];
-              if (!recent) return;
-              queryEl.value = recent.query;
-              renderAnswer(recent.payload, recent.query, false);
-              showToast('Recent search restored.');
-            });
-
-            exportCsvBtn.addEventListener('click', exportCurrentSearchCsv);
-
-            copyAnswerBtn.addEventListener('click', async () => {
-              const text = document.getElementById('answerText').textContent.trim();
-              if (!text) { showToast('Run a search before copying.'); return; }
-              try {
-                await navigator.clipboard.writeText(text);
-                showToast('Draft copied to clipboard.');
-              } catch {
-                const temp = document.createElement('textarea');
-                temp.value = text;
-                document.body.appendChild(temp);
-                temp.select();
-                document.execCommand('copy');
-                temp.remove();
-                showToast('Draft copied to clipboard.');
-              }
-            });
-
             async function draftAnswer(query) {
               const clean = query.trim();
               if (!clean) { showToast('Enter the customer issue first.'); return; }
@@ -679,8 +488,8 @@ export default function Home() {
             }
 
             document.getElementById('searchForm').addEventListener('submit', e => { e.preventDefault(); draftAnswer(queryEl.value); });
+            exportCsvBtn.addEventListener('click', downloadCsv);
             modeEl.addEventListener('change', () => apiPanel.classList.toggle('visible', modeEl.value === 'api'));
-            renderRecentSearches();
 
             function showToast(message) {
               let toast = document.getElementById('toast');
