@@ -332,6 +332,19 @@ main {
   font-size: 17px;
 }
 
+.query-inspection {
+  display: grid;
+  gap: 10px;
+  margin: 16px 0;
+}
+
+.query-card {
+  background: rgba(255, 184, 28, .06);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px;
+}
+
 .sources {
   margin-top: 16px;
 }

@@ -13,6 +13,9 @@ type SemanticPayload = {
   success?: boolean;
   error?: string;
   query?: string;
+  enhanced_query?: string;
+  embedding_text?: string;
+  threshold?: number;
   results?: SimilarTicket[];
   count?: number;
 };
@@ -179,11 +182,13 @@ export default function Home() {
   function exportSemanticCsv() {
     if (!semanticResult) return;
     downloadCsv(`semantic-ticket-search-${new Date().toISOString().slice(0, 10)}.csv`, [
-      ['query', 'count', 'threshold', 'conv_id', 'similarity', 'new_message', 'embedded_at'],
+      ['query', 'enhanced_query', 'embedding_text', 'count', 'threshold', 'conv_id', 'similarity', 'new_message', 'embedded_at'],
       ...semanticTickets.map((ticket) => [
         semanticQuery,
+        semanticResult.enhanced_query ?? '',
+        semanticResult.embedding_text ?? semanticResult.enhanced_query ?? '',
         semanticResult.count ?? semanticTickets.length,
-        threshold,
+        semanticResult.threshold ?? threshold,
         ticket.conv_id,
         ticket.similarity,
         ticket.new_message,
@@ -473,6 +478,21 @@ export default function Home() {
                   <div className="analytics-card"><span>Best match</span><b>{formatPercent(semanticAnalytics.bestSimilarity)}</b></div>
                   <div className="analytics-card"><span>Avg similarity</span><b>{formatPercent(semanticAnalytics.averageSimilarity)}</b></div>
                   <div className="analytics-card"><span>Newest result</span><b>{semanticAnalytics.newest}</b></div>
+                </div>
+
+                <div className="query-inspection" aria-label="Search text inspection">
+                  <div className="query-card">
+                    <div className="detail-label">LLM enhanced ticket</div>
+                    <div className={`detail-value${semanticResult.enhanced_query ? '' : ' empty'}`}>
+                      {semanticResult.enhanced_query || 'No enhanced query was returned by the search function.'}
+                    </div>
+                  </div>
+                  <div className="query-card">
+                    <div className="detail-label">Text used for semantic search</div>
+                    <div className={`detail-value${semanticResult.embedding_text ? '' : ' empty'}`}>
+                      {semanticResult.embedding_text || semanticResult.enhanced_query || 'No embedding text was returned by the search function.'}
+                    </div>
+                  </div>
                 </div>
 
                 <div className="sources">
