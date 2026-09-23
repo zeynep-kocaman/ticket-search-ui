@@ -5,6 +5,8 @@ import { useEffect, useMemo, useState } from 'react';
 type SimilarTicket = {
   conv_id: string;
   similarity: number;
+  rerank_score?: number | null;
+  rerank_rank?: number | null;
   new_message: string;
   embedded_at: string;
 };
@@ -16,6 +18,9 @@ type SemanticPayload = {
   enhanced_query?: string;
   embedding_text?: string;
   threshold?: number;
+  use_reranker?: boolean;
+  retrieved_count?: number;
+  reranked_count?: number;
   results?: SimilarTicket[];
   count?: number;
 };
@@ -45,6 +50,8 @@ type RecentSearch = {
   query: string;
   at: string;
   useEnhancedQuery?: boolean;
+  useReranker?: boolean;
+  rerankTopK?: string;
   semanticResult?: SemanticPayload;
   hybridResult?: HybridPayload;
 };
@@ -97,6 +104,8 @@ export default function Home() {
   const [semanticQuery, setSemanticQuery] = useState('');
   const [threshold, setThreshold] = useState('0.84');
   const [useEnhancedQuery, setUseEnhancedQuery] = useState(true);
+  const [useReranker, setUseReranker] = useState(true);
+  const [rerankTopK, setRerankTopK] = useState('150');
   const [semanticLoading, setSemanticLoading] = useState(false);
   const [semanticResult, setSemanticResult] = useState<SemanticPayload | null>(null);
   const [semanticOpenTickets, setSemanticOpenTickets] = useState<Set<string>>(new Set());
@@ -114,10 +123,15 @@ export default function Home() {
 
   const semanticAnalytics = useMemo(() => {
     const similarities = semanticTickets.map((ticket) => ticket.similarity).filter(Number.isFinite);
+    const rerankScores = semanticTickets
+      .map((ticket) => ticket.rerank_score)
+      .filter((value): value is number => typeof value === 'number' && Number.isFinite(value));
     const best = similarities.length ? Math.max(...similarities) : null;
     return {
       averageSimilarity: average(similarities),
       bestSimilarity: best,
+      averageRerankScore: average(rerankScores),
+      bestRerankScore: rerankScores.length ? Math.max(...rerankScores) : null,
       newest: newestDate(semanticTickets.map((ticket) => ticket.embedded_at)),
     };
   }, [semanticTickets]);
@@ -172,6 +186,8 @@ export default function Home() {
     if (search.mode === 'semantic') {
       setSemanticQuery(search.query);
       setUseEnhancedQuery(search.useEnhancedQuery ?? true);
+      setUseReranker(search.useReranker ?? true);
+      setRerankTopK(search.rerankTopK ?? '150');
       setSemanticResult(search.semanticResult ?? null);
       setSemanticOpenTickets(new Set());
     } else {
@@ -185,16 +201,22 @@ export default function Home() {
   function exportSemanticCsv() {
     if (!semanticResult) return;
     downloadCsv(`semantic-ticket-search-${new Date().toISOString().slice(0, 10)}.csv`, [
-      ['query', 'use_enhanced_query', 'enhanced_query', 'embedding_text', 'count', 'threshold', 'conv_id', 'similarity', 'new_message', 'embedded_at'],
+      ['query', 'use_enhanced_query', 'use_reranker', 'rerank_top_k', 'enhanced_query', 'embedding_text', 'count', 'retrieved_count', 'reranked_count', 'threshold', 'conv_id', 'similarity', 'rerank_score', 'rerank_rank', 'new_message', 'embedded_at'],
       ...semanticTickets.map((ticket) => [
         semanticQuery,
         useEnhancedQuery,
+        useReranker,
+        rerankTopK,
         semanticResult.enhanced_query ?? '',
         semanticResult.embedding_text ?? semanticResult.enhanced_query ?? '',
         semanticResult.count ?? semanticTickets.length,
+        semanticResult.retrieved_count ?? semanticResult.count ?? semanticTickets.length,
+        semanticResult.reranked_count ?? '',
         semanticResult.threshold ?? threshold,
         ticket.conv_id,
         ticket.similarity,
+        ticket.rerank_score ?? '',
+        ticket.rerank_rank ?? '',
         ticket.new_message,
         ticket.embedded_at,
       ]),
@@ -238,6 +260,7 @@ export default function Home() {
       if (!apiKey.trim()) throw new Error('Missing NEXT_PUBLIC_SUPABASE_ANON_KEY - check your .env config.');
 
       const parsedThreshold = parseFloat(threshold);
+      const parsedRerankTopK = parseInt(rerankTopK, 10);
 
       const response = await fetch(semanticEndpoint.trim(), {
         method: 'POST',
@@ -250,7 +273,8 @@ export default function Home() {
           query: clean,
           threshold: Number.isFinite(parsedThreshold) ? parsedThreshold : 0.84,
           use_enhanced_query: useEnhancedQuery,
-          useEnhancedQuery,
+          use_reranker: useReranker,
+          rerank_top_k: Number.isFinite(parsedRerankTopK) ? parsedRerankTopK : 150,
         }),
       });
 
@@ -272,6 +296,8 @@ export default function Home() {
         query: clean,
         at: new Date().toISOString(),
         useEnhancedQuery,
+        useReranker,
+        rerankTopK,
         semanticResult: payload,
       });
     } catch (error) {
@@ -469,6 +495,32 @@ export default function Home() {
                 />
                 <span>Use LLM-enhanced query for semantic search</span>
               </label>
+
+              <label className="checkbox-row" htmlFor="useReranker">
+                <input
+                  id="useReranker"
+                  type="checkbox"
+                  checked={useReranker}
+                  onChange={(e) => setUseReranker(e.target.checked)}
+                />
+                <span>Use Voyage reranker after vector search</span>
+              </label>
+
+              {useReranker && (
+                <div className="inline-field">
+                  <label htmlFor="rerankTopK">Rerank Top K</label>
+                  <input
+                    id="rerankTopK"
+                    type="text"
+                    inputMode="numeric"
+                    value={rerankTopK}
+                    onChange={(e) => setRerankTopK(e.target.value.replace(/[^0-9]/g, ''))}
+                  />
+                  <div className="api-help">
+                    For testing, rerank up to 150 short email tickets per query.
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -494,6 +546,8 @@ export default function Home() {
                 <div className="analytics-grid" aria-label="Semantic search analytics">
                   <div className="analytics-card"><span>Best match</span><b>{formatPercent(semanticAnalytics.bestSimilarity)}</b></div>
                   <div className="analytics-card"><span>Avg similarity</span><b>{formatPercent(semanticAnalytics.averageSimilarity)}</b></div>
+                  <div className="analytics-card"><span>Best rerank</span><b>{semanticAnalytics.bestRerankScore?.toFixed(4) ?? '-'}</b></div>
+                  <div className="analytics-card"><span>Reranked</span><b>{semanticResult.reranked_count ?? 0}</b></div>
                   <div className="analytics-card"><span>Newest result</span><b>{semanticAnalytics.newest}</b></div>
                 </div>
 
@@ -561,6 +615,9 @@ export default function Home() {
                           >
                             <span className="detail-id">Ticket {ticket.conv_id}</span>
                             <span className="meta">
+                              {ticket.rerank_score !== null && ticket.rerank_score !== undefined && (
+                                <>Rerank <b>{ticket.rerank_score.toFixed(4)}</b> · </>
+                              )}
                               Similarity <b>{(ticket.similarity * 100).toFixed(1)}%</b>
                             </span>
                           </button>
