@@ -100,6 +100,7 @@ export default function Home() {
   const [mode, setMode] = useState<Mode>('semantic');
   const [toast, setToast] = useState('');
   const [recentSearches, setRecentSearches] = useState<RecentSearch[]>([]);
+  const [selectedRecentId, setSelectedRecentId] = useState<string | null>(null);
 
   const [semanticQuery, setSemanticQuery] = useState('');
   const [threshold, setThreshold] = useState('0.84');
@@ -120,6 +121,7 @@ export default function Home() {
 
   const semanticTickets = semanticResult?.results ?? [];
   const hybridTickets = hybridResult?.results ?? [];
+  const selectedRecentSearch = recentSearches.find((search) => search.id === selectedRecentId) ?? recentSearches[0] ?? null;
 
   const semanticAnalytics = useMemo(() => {
     const similarities = semanticTickets.map((ticket) => ticket.similarity).filter(Number.isFinite);
@@ -177,6 +179,7 @@ export default function Home() {
     setRecentSearches((current) => {
       const next = [search, ...current.filter((item) => item.query !== search.query || item.mode !== search.mode)].slice(0, 2);
       localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(next));
+      setSelectedRecentId(search.id);
       return next;
     });
   }
@@ -376,6 +379,79 @@ export default function Home() {
     }
   }
 
+  function renderRecentResult(search: RecentSearch) {
+    if (search.mode === 'semantic') {
+      const tickets = search.semanticResult?.results ?? [];
+      return (
+        <div className="recent-result-block">
+          <div className="answer-header compact">
+            <div className="answer-title">Semantic Results</div>
+            <span className="answer-badge">{tickets.length} found</span>
+          </div>
+          <div className="query-card">
+            <div className="query-card-head">
+              <div className="detail-label">Search text</div>
+              <span className="answer-badge">{search.useEnhancedQuery ? 'Enhanced' : 'Original'}</span>
+            </div>
+            <div className="detail-value">
+              {search.semanticResult?.embedding_text || search.semanticResult?.enhanced_query || search.query}
+            </div>
+          </div>
+          <div className="source-list recent-results-list" style={{ flexDirection: 'column', gap: 10 }}>
+            {tickets.length === 0 && <span className="source-ticket">No saved semantic results.</span>}
+            {tickets.slice(0, 12).map((ticket) => (
+              <div key={ticket.conv_id} className="ticket-detail compact-ticket" style={{ width: '100%' }}>
+                <div className="detail-head">
+                  <span className="detail-id">Ticket {ticket.conv_id}</span>
+                  <span className="meta">
+                    {ticket.rerank_score !== null && ticket.rerank_score !== undefined && (
+                      <>Rerank <b>{ticket.rerank_score.toFixed(4)}</b> · </>
+                    )}
+                    Similarity <b>{(ticket.similarity * 100).toFixed(1)}%</b>
+                  </span>
+                </div>
+                <div className="detail-field">
+                  <div className={`detail-value${ticket.new_message ? '' : ' empty'}`}>
+                    {ticket.new_message || 'No message recorded.'}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    const tickets = search.hybridResult?.results ?? [];
+    return (
+      <div className="recent-result-block">
+        <div className="answer-header compact">
+          <div className="answer-title">Hybrid Results</div>
+          <span className="answer-badge">{tickets.length} found</span>
+        </div>
+        <div className="source-list recent-results-list" style={{ flexDirection: 'column', gap: 10 }}>
+          {tickets.length === 0 && <span className="source-ticket">No saved hybrid results.</span>}
+          {tickets.slice(0, 12).map((ticket) => (
+            <div key={ticket.conv_id} className="ticket-detail compact-ticket" style={{ width: '100%' }}>
+              <div className="detail-head">
+                <span className="detail-id">Ticket {ticket.conv_id}</span>
+                <span className="meta">
+                  Score <b>{ticket.score.toFixed(4)}</b>
+                  {ticket.similarity !== null && <> · Similarity <b>{(ticket.similarity * 100).toFixed(1)}%</b></>}
+                </span>
+              </div>
+              <div className="detail-field">
+                <div className={`detail-value${ticket.new_message ? '' : ' empty'}`}>
+                  {ticket.new_message || 'No message recorded.'}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <main>
       <div className="topbar">
@@ -424,31 +500,11 @@ export default function Home() {
         </button>
       </div>
 
-      {recentSearches.length > 0 && (
-        <section className="recent-panel" aria-label="Recent searches">
-          <div className="section-head">
-            <div className="section-title">Recent Searches</div>
-            <div className="section-note">Latest 2 searches and saved results</div>
-          </div>
-          <div className="recent-list">
-            {recentSearches.map((search) => {
-              const count = search.mode === 'semantic'
-                ? search.semanticResult?.results?.length ?? 0
-                : search.hybridResult?.results?.length ?? 0;
-              return (
-                <button key={search.id} className="recent-item" onClick={() => restoreRecentSearch(search)}>
-                  <span className="recent-query">{search.query}</span>
-                  <span className="recent-meta">
-                    {search.mode} · {count} results · {new Date(search.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </section>
-      )}
+      <div className="comparison-grid">
+        <section className="current-column" aria-label="Current search">
+          <div className="column-label">Current Search</div>
 
-      {mode === 'semantic' && (
+          {mode === 'semantic' && (
         <>
           <div className="search-card">
             <div className="search-row">
@@ -493,7 +549,7 @@ export default function Home() {
                   checked={useEnhancedQuery}
                   onChange={(e) => setUseEnhancedQuery(e.target.checked)}
                 />
-                <span>Use LLM-enhanced query for semantic search</span>
+                <span>Use AI-enhanced query for semantic search</span>
               </label>
 
               <label className="checkbox-row" htmlFor="useReranker">
@@ -503,7 +559,7 @@ export default function Home() {
                   checked={useReranker}
                   onChange={(e) => setUseReranker(e.target.checked)}
                 />
-                <span>Use Voyage reranker after vector search</span>
+                <span>Get best matching result (Use reranker)</span>
               </label>
 
               {useReranker && (
@@ -641,7 +697,7 @@ export default function Home() {
         </>
       )}
 
-      {mode === 'hybrid' && (
+          {mode === 'hybrid' && (
         <>
           <div className="search-card">
             <div className="search-row">
@@ -779,6 +835,65 @@ export default function Home() {
           )}
         </>
       )}
+
+        </section>
+
+        <aside className="recent-column" aria-label="Recent search result comparison">
+          <div className="column-label">Recent Result</div>
+          <section className="recent-panel">
+            <div className="section-head">
+              <div className="section-title">Recent Searches</div>
+              <div className="section-note">Latest 2 saved results</div>
+            </div>
+
+            {recentSearches.length === 0 && (
+              <p className="placeholder compact-placeholder">
+                Run a search to keep recent results here for side-by-side comparison.
+              </p>
+            )}
+
+            {recentSearches.length > 0 && (
+              <>
+                <div className="recent-list">
+                  {recentSearches.map((search) => {
+                    const count = search.mode === 'semantic'
+                      ? search.semanticResult?.results?.length ?? 0
+                      : search.hybridResult?.results?.length ?? 0;
+                    const isSelected = selectedRecentSearch?.id === search.id;
+                    return (
+                      <button
+                        key={search.id}
+                        className={`recent-item${isSelected ? ' selected' : ''}`}
+                        onClick={() => setSelectedRecentId(search.id)}
+                      >
+                        <span className="recent-query">{search.query}</span>
+                        <span className="recent-meta">
+                          {search.mode} · {count} results · {new Date(search.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {selectedRecentSearch && (
+                  <div className="recent-display">
+                    <div className="answer-header compact">
+                      <div>
+                        <div className="answer-title">Displayed Search</div>
+                        <div className="recent-display-query">{selectedRecentSearch.query}</div>
+                      </div>
+                      <button className="export-btn" onClick={() => restoreRecentSearch(selectedRecentSearch)}>
+                        Restore
+                      </button>
+                    </div>
+                    {renderRecentResult(selectedRecentSearch)}
+                  </div>
+                )}
+              </>
+            )}
+          </section>
+        </aside>
+      </div>
 
       {toast && <div className="toast">{toast}</div>}
     </main>
