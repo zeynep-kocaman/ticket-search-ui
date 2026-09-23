@@ -246,6 +246,23 @@ main {
   width: 100%;
 }
 
+.checkbox-row {
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--muted) !important;
+  display: flex !important;
+  gap: 9px;
+  letter-spacing: 0 !important;
+  margin-top: 12px;
+  padding: 10px;
+  text-transform: none !important;
+}
+
+.checkbox-row input {
+  accent-color: var(--gold);
+}
+
 .api-help {
   color: var(--subtle);
   font-size: 10px;
@@ -343,6 +360,29 @@ main {
   border: 1px solid var(--line);
   border-radius: 12px;
   padding: 14px;
+}
+
+.query-card-head {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.query-details {
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 12px;
+  padding-top: 12px;
+}
+
+.query-details summary {
+  color: var(--blue);
+  cursor: pointer;
+  font-weight: 650;
+  margin-bottom: 8px;
 }
 
 .sources {

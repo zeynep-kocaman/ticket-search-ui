@@ -44,6 +44,7 @@ type RecentSearch = {
   mode: Mode;
   query: string;
   at: string;
+  useEnhancedQuery?: boolean;
   semanticResult?: SemanticPayload;
   hybridResult?: HybridPayload;
 };
@@ -95,6 +96,7 @@ export default function Home() {
 
   const [semanticQuery, setSemanticQuery] = useState('');
   const [threshold, setThreshold] = useState('0.84');
+  const [useEnhancedQuery, setUseEnhancedQuery] = useState(true);
   const [semanticLoading, setSemanticLoading] = useState(false);
   const [semanticResult, setSemanticResult] = useState<SemanticPayload | null>(null);
   const [semanticOpenTickets, setSemanticOpenTickets] = useState<Set<string>>(new Set());
@@ -169,6 +171,7 @@ export default function Home() {
     setMode(search.mode);
     if (search.mode === 'semantic') {
       setSemanticQuery(search.query);
+      setUseEnhancedQuery(search.useEnhancedQuery ?? true);
       setSemanticResult(search.semanticResult ?? null);
       setSemanticOpenTickets(new Set());
     } else {
@@ -182,9 +185,10 @@ export default function Home() {
   function exportSemanticCsv() {
     if (!semanticResult) return;
     downloadCsv(`semantic-ticket-search-${new Date().toISOString().slice(0, 10)}.csv`, [
-      ['query', 'enhanced_query', 'embedding_text', 'count', 'threshold', 'conv_id', 'similarity', 'new_message', 'embedded_at'],
+      ['query', 'use_enhanced_query', 'enhanced_query', 'embedding_text', 'count', 'threshold', 'conv_id', 'similarity', 'new_message', 'embedded_at'],
       ...semanticTickets.map((ticket) => [
         semanticQuery,
+        useEnhancedQuery,
         semanticResult.enhanced_query ?? '',
         semanticResult.embedding_text ?? semanticResult.enhanced_query ?? '',
         semanticResult.count ?? semanticTickets.length,
@@ -245,6 +249,8 @@ export default function Home() {
         body: JSON.stringify({
           query: clean,
           threshold: Number.isFinite(parsedThreshold) ? parsedThreshold : 0.84,
+          use_enhanced_query: useEnhancedQuery,
+          useEnhancedQuery,
         }),
       });
 
@@ -265,6 +271,7 @@ export default function Home() {
         mode: 'semantic',
         query: clean,
         at: new Date().toISOString(),
+        useEnhancedQuery,
         semanticResult: payload,
       });
     } catch (error) {
@@ -452,6 +459,16 @@ export default function Home() {
               <div className="api-help">
                 Adjust how closely a past ticket must match to be shown.
               </div>
+
+              <label className="checkbox-row" htmlFor="useEnhancedQuery">
+                <input
+                  id="useEnhancedQuery"
+                  type="checkbox"
+                  checked={useEnhancedQuery}
+                  onChange={(e) => setUseEnhancedQuery(e.target.checked)}
+                />
+                <span>Use LLM-enhanced query for semantic search</span>
+              </label>
             </div>
           </div>
 
@@ -482,17 +499,39 @@ export default function Home() {
 
                 <div className="query-inspection" aria-label="Search text inspection">
                   <div className="query-card">
-                    <div className="detail-label">LLM enhanced ticket</div>
-                    <div className={`detail-value${semanticResult.enhanced_query ? '' : ' empty'}`}>
-                      {semanticResult.enhanced_query || 'No enhanced query was returned by the search function.'}
+                    <div className="query-card-head">
+                      <div className="detail-label">Text used for semantic search</div>
+                      <span className="answer-badge">{useEnhancedQuery ? 'Enhanced' : 'Original'}</span>
                     </div>
-                  </div>
-                  <div className="query-card">
-                    <div className="detail-label">Text used for semantic search</div>
                     <div className={`detail-value${semanticResult.embedding_text ? '' : ' empty'}`}>
-                      {semanticResult.embedding_text || semanticResult.enhanced_query || 'No embedding text was returned by the search function.'}
+                      {semanticResult.embedding_text || 'No embedding text was returned by the search function.'}
                     </div>
+                    {useEnhancedQuery && semanticResult.enhanced_query && semanticResult.enhanced_query !== semanticResult.embedding_text && (
+                      <details className="query-details">
+                        <summary>Show LLM enhanced ticket</summary>
+                        <div className="detail-value">{semanticResult.enhanced_query}</div>
+                      </details>
+                    )}
+                    {!useEnhancedQuery && semanticResult.enhanced_query && (
+                      <details className="query-details">
+                        <summary>Show LLM suggestion that was not used</summary>
+                        <div className="detail-value">{semanticResult.enhanced_query}</div>
+                      </details>
+                    )}
+                    {!useEnhancedQuery && !semanticResult.enhanced_query && (
+                      <div className="api-help">
+                        Enhanced query generation is off for this search.
+                      </div>
+                    )}
                   </div>
+                  {!semanticResult.embedding_text && semanticResult.enhanced_query && (
+                    <div className="query-card">
+                      <div className="detail-label">LLM enhanced ticket</div>
+                      <div className="detail-value">
+                        {semanticResult.enhanced_query}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="sources">
