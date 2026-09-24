@@ -375,6 +375,34 @@ main {
   font-size: 17px;
 }
 
+.metadata-grid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  margin: 12px 0 16px;
+}
+
+.metadata-chip {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.metadata-chip span {
+  color: var(--subtle);
+  display: block;
+  font-size: 9px;
+  letter-spacing: .12em;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+}
+
+.metadata-chip b {
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 650;
+}
+
 .query-inspection {
   display: grid;
   gap: 10px;
@@ -454,6 +482,21 @@ main {
 
 .detail-field {
   margin-top: 14px;
+}
+
+.ticket-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.ticket-tags span {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 10px;
+  padding: 4px 8px;
 }
 
 .detail-label {
@@ -564,12 +607,30 @@ main {
 
 .recent-results-list {
   max-height: 760px;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
   padding-right: 4px;
 }
 
 .compact-ticket {
   padding: 14px;
+}
+
+.compact-ticket .detail-head {
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.compact-ticket .detail-value,
+.recent-display-query,
+.recent-query {
+  overflow-wrap: anywhere;
+}
+
+.compact-ticket .meta,
+.recent-meta {
+  white-space: normal;
 }
 
 .answer-header.compact {

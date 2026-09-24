@@ -9,6 +9,14 @@ type SimilarTicket = {
   rerank_rank?: number | null;
   new_message: string;
   embedded_at: string;
+  created_at?: string;
+  pred_category?: string | null;
+  pred_request_type?: string | null;
+};
+
+type SearchFilters = {
+  date_from: string | null;
+  date_to: string | null;
 };
 
 type SemanticPayload = {
@@ -19,6 +27,10 @@ type SemanticPayload = {
   embedding_text?: string;
   threshold?: number;
   use_reranker?: boolean;
+  match_count?: number;
+  extracted_filters?: SearchFilters;
+  category_hint?: string | null;
+  request_type_hint?: string | null;
   retrieved_count?: number;
   reranked_count?: number;
   results?: SimilarTicket[];
@@ -64,7 +76,7 @@ function csvEscape(value: unknown) {
 }
 
 function downloadCsv(filename: string, rows: unknown[][]) {
-  const csv = rows.map((row) => row.map(csvEscape).join(',')).join('\n');
+  const csv = `\uFEFF${rows.map((row) => row.map(csvEscape).join(',')).join('\r\n')}`;
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
@@ -89,6 +101,16 @@ function newestDate(values: string[]) {
   const dates = values.map((value) => new Date(value)).filter((date) => Number.isFinite(date.getTime()));
   if (!dates.length) return '-';
   return new Date(Math.max(...dates.map((date) => date.getTime()))).toLocaleDateString();
+}
+
+function formatDate(value?: string | null) {
+  if (!value) return '-';
+  const date = new Date(value);
+  return Number.isFinite(date.getTime()) ? date.toLocaleDateString() : value;
+}
+
+function formatHint(value?: string | null) {
+  return value ? value.replace(/_/g, ' ') : '-';
 }
 
 export default function Home() {
@@ -204,7 +226,7 @@ export default function Home() {
   function exportSemanticCsv() {
     if (!semanticResult) return;
     downloadCsv(`semantic-ticket-search-${new Date().toISOString().slice(0, 10)}.csv`, [
-      ['query', 'use_enhanced_query', 'use_reranker', 'rerank_top_k', 'enhanced_query', 'embedding_text', 'count', 'retrieved_count', 'reranked_count', 'threshold', 'conv_id', 'similarity', 'rerank_score', 'rerank_rank', 'new_message', 'embedded_at'],
+      ['query', 'use_enhanced_query', 'use_reranker', 'rerank_top_k', 'enhanced_query', 'embedding_text', 'category_hint', 'request_type_hint', 'date_from', 'date_to', 'match_count', 'count', 'retrieved_count', 'reranked_count', 'threshold', 'conv_id', 'similarity', 'rerank_score', 'rerank_rank', 'pred_category', 'pred_request_type', 'new_message', 'embedded_at', 'created_at'],
       ...semanticTickets.map((ticket) => [
         semanticQuery,
         useEnhancedQuery,
@@ -212,6 +234,11 @@ export default function Home() {
         rerankTopK,
         semanticResult.enhanced_query ?? '',
         semanticResult.embedding_text ?? semanticResult.enhanced_query ?? '',
+        semanticResult.category_hint ?? '',
+        semanticResult.request_type_hint ?? '',
+        semanticResult.extracted_filters?.date_from ?? '',
+        semanticResult.extracted_filters?.date_to ?? '',
+        semanticResult.match_count ?? '',
         semanticResult.count ?? semanticTickets.length,
         semanticResult.retrieved_count ?? semanticResult.count ?? semanticTickets.length,
         semanticResult.reranked_count ?? '',
@@ -220,8 +247,11 @@ export default function Home() {
         ticket.similarity,
         ticket.rerank_score ?? '',
         ticket.rerank_rank ?? '',
+        ticket.pred_category ?? '',
+        ticket.pred_request_type ?? '',
         ticket.new_message,
         ticket.embedded_at,
+        ticket.created_at ?? '',
       ]),
     ]);
     setToast('CSV export downloaded.');
@@ -397,9 +427,15 @@ export default function Home() {
               {search.semanticResult?.embedding_text || search.semanticResult?.enhanced_query || search.query}
             </div>
           </div>
+          <div className="metadata-grid">
+            <div className="metadata-chip"><span>Category hint</span><b>{formatHint(search.semanticResult?.category_hint)}</b></div>
+            <div className="metadata-chip"><span>Request hint</span><b>{formatHint(search.semanticResult?.request_type_hint)}</b></div>
+            <div className="metadata-chip"><span>Date from</span><b>{formatDate(search.semanticResult?.extracted_filters?.date_from)}</b></div>
+            <div className="metadata-chip"><span>Date to</span><b>{formatDate(search.semanticResult?.extracted_filters?.date_to)}</b></div>
+          </div>
           <div className="source-list recent-results-list" style={{ flexDirection: 'column', gap: 10 }}>
             {tickets.length === 0 && <span className="source-ticket">No saved semantic results.</span>}
-            {tickets.slice(0, 12).map((ticket) => (
+            {tickets.map((ticket) => (
               <div key={ticket.conv_id} className="ticket-detail compact-ticket" style={{ width: '100%' }}>
                 <div className="detail-head">
                   <span className="detail-id">Ticket {ticket.conv_id}</span>
@@ -411,6 +447,11 @@ export default function Home() {
                   </span>
                 </div>
                 <div className="detail-field">
+                  <div className="ticket-tags">
+                    {ticket.created_at && <span>{formatDate(ticket.created_at)}</span>}
+                    {ticket.pred_category && <span>{formatHint(ticket.pred_category)}</span>}
+                    {ticket.pred_request_type && <span>{formatHint(ticket.pred_request_type)}</span>}
+                  </div>
                   <div className={`detail-value${ticket.new_message ? '' : ' empty'}`}>
                     {ticket.new_message || 'No message recorded.'}
                   </div>
@@ -431,7 +472,7 @@ export default function Home() {
         </div>
         <div className="source-list recent-results-list" style={{ flexDirection: 'column', gap: 10 }}>
           {tickets.length === 0 && <span className="source-ticket">No saved hybrid results.</span>}
-          {tickets.slice(0, 12).map((ticket) => (
+          {tickets.map((ticket) => (
             <div key={ticket.conv_id} className="ticket-detail compact-ticket" style={{ width: '100%' }}>
               <div className="detail-head">
                 <span className="detail-id">Ticket {ticket.conv_id}</span>
@@ -607,6 +648,13 @@ export default function Home() {
                   <div className="analytics-card"><span>Newest result</span><b>{semanticAnalytics.newest}</b></div>
                 </div>
 
+                <div className="metadata-grid" aria-label="Extracted search metadata">
+                  <div className="metadata-chip"><span>Category hint</span><b>{formatHint(semanticResult.category_hint)}</b></div>
+                  <div className="metadata-chip"><span>Request hint</span><b>{formatHint(semanticResult.request_type_hint)}</b></div>
+                  <div className="metadata-chip"><span>Date from</span><b>{formatDate(semanticResult.extracted_filters?.date_from)}</b></div>
+                  <div className="metadata-chip"><span>Date to</span><b>{formatDate(semanticResult.extracted_filters?.date_to)}</b></div>
+                </div>
+
                 <div className="query-inspection" aria-label="Search text inspection">
                   <div className="query-card">
                     <div className="query-card-head">
@@ -680,6 +728,11 @@ export default function Home() {
 
                           {isOpen && (
                             <div className="detail-field">
+                              <div className="ticket-tags">
+                                {ticket.created_at && <span>{formatDate(ticket.created_at)}</span>}
+                                {ticket.pred_category && <span>{formatHint(ticket.pred_category)}</span>}
+                                {ticket.pred_request_type && <span>{formatHint(ticket.pred_request_type)}</span>}
+                              </div>
                               <div className="detail-label">Message</div>
                               <div className={`detail-value${ticket.new_message ? '' : ' empty'}`}>
                                 {ticket.new_message || 'No message recorded.'}
