@@ -527,18 +527,6 @@ export default function Home() {
         >
           Semantic Search
         </button>
-        <button
-          role="tab"
-          aria-selected={mode === 'hybrid'}
-          className="theme-toggle"
-          style={{
-            fontWeight: mode === 'hybrid' ? 700 : 400,
-            opacity: mode === 'hybrid' ? 1 : 0.6,
-          }}
-          onClick={() => setMode('hybrid')}
-        >
-          Hybrid Search
-        </button>
       </div>
 
       <div className="comparison-grid">
