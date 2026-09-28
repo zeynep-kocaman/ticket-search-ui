@@ -55,6 +55,7 @@ type HybridPayload = {
 };
 
 type Mode = 'semantic' | 'hybrid';
+type EmbeddingFunction = 'default' | 'voyage';
 
 type RecentSearch = {
   id: string;
@@ -64,6 +65,7 @@ type RecentSearch = {
   useEnhancedQuery?: boolean;
   useReranker?: boolean;
   rerankTopK?: string;
+  embeddingFunction?: EmbeddingFunction;
   semanticResult?: SemanticPayload;
   hybridResult?: HybridPayload;
 };
@@ -115,8 +117,14 @@ function formatHint(value?: string | null) {
 
 export default function Home() {
   const semanticEndpoint = process.env.NEXT_PUBLIC_SUPABASE_SEMANTIC_FUNCTION_URL ?? '';
+  const voyageSemanticEndpoint = process.env.NEXT_PUBLIC_SUPABASE_SEMANTIC_VOYAGE_FUNCTION_URL ?? '';
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
   const hybridEndpoint = process.env.NEXT_PUBLIC_SUPABASE_HYBRID_FUNCTION_URL ?? '';
   const apiKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '';
+  const semanticFunctionEndpoints: Record<EmbeddingFunction, string> = {
+    default: semanticEndpoint || (supabaseUrl ? `${supabaseUrl}/functions/v1/vdb_search_similar_tickets_function` : ''),
+    voyage: voyageSemanticEndpoint || (supabaseUrl ? `${supabaseUrl}/functions/v1/vdb_search_similar_tickets_function_voyage` : semanticEndpoint.replace(/\/functions\/v1\/[^/]+$/, '/functions/v1/vdb_search_similar_tickets_function_voyage')),
+  };
 
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
   const [mode, setMode] = useState<Mode>('semantic');
@@ -126,6 +134,7 @@ export default function Home() {
 
   const [semanticQuery, setSemanticQuery] = useState('');
   const [threshold, setThreshold] = useState('0.84');
+  const [embeddingFunction, setEmbeddingFunction] = useState<EmbeddingFunction>('default');
   const [useEnhancedQuery, setUseEnhancedQuery] = useState(true);
   const [useReranker, setUseReranker] = useState(true);
   const [rerankTopK, setRerankTopK] = useState('150');
@@ -210,6 +219,7 @@ export default function Home() {
     setMode(search.mode);
     if (search.mode === 'semantic') {
       setSemanticQuery(search.query);
+      setEmbeddingFunction(search.embeddingFunction ?? 'default');
       setUseEnhancedQuery(search.useEnhancedQuery ?? true);
       setUseReranker(search.useReranker ?? true);
       setRerankTopK(search.rerankTopK ?? '150');
@@ -226,9 +236,10 @@ export default function Home() {
   function exportSemanticCsv() {
     if (!semanticResult) return;
     downloadCsv(`semantic-ticket-search-${new Date().toISOString().slice(0, 10)}.csv`, [
-      ['query', 'use_enhanced_query', 'use_reranker', 'rerank_top_k', 'enhanced_query', 'embedding_text', 'category_hint', 'request_type_hint', 'date_from', 'date_to', 'match_count', 'count', 'retrieved_count', 'reranked_count', 'threshold', 'conv_id', 'similarity', 'rerank_score', 'rerank_rank', 'pred_category', 'pred_request_type', 'new_message', 'embedded_at', 'created_at'],
+      ['query', 'embedding_function', 'use_enhanced_query', 'use_reranker', 'rerank_top_k', 'enhanced_query', 'embedding_text', 'category_hint', 'request_type_hint', 'date_from', 'date_to', 'match_count', 'count', 'retrieved_count', 'reranked_count', 'threshold', 'conv_id', 'similarity', 'rerank_score', 'rerank_rank', 'pred_category', 'pred_request_type', 'new_message', 'embedded_at', 'created_at'],
       ...semanticTickets.map((ticket) => [
         semanticQuery,
+        embeddingFunction,
         useEnhancedQuery,
         useReranker,
         rerankTopK,
@@ -289,13 +300,15 @@ export default function Home() {
     setSemanticOpenTickets(new Set());
 
     try {
-      if (!semanticEndpoint.trim()) throw new Error('Missing NEXT_PUBLIC_SUPABASE_SEMANTIC_FUNCTION_URL - check your .env config.');
       if (!apiKey.trim()) throw new Error('Missing NEXT_PUBLIC_SUPABASE_ANON_KEY - check your .env config.');
 
       const parsedThreshold = parseFloat(threshold);
       const parsedRerankTopK = parseInt(rerankTopK, 10);
+      const endpoint = semanticFunctionEndpoints[embeddingFunction];
 
-      const response = await fetch(semanticEndpoint.trim(), {
+      if (!endpoint.trim()) throw new Error('Missing semantic search endpoint configuration - check your .env config.');
+
+      const response = await fetch(endpoint.trim(), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -328,6 +341,7 @@ export default function Home() {
         mode: 'semantic',
         query: clean,
         at: new Date().toISOString(),
+        embeddingFunction,
         useEnhancedQuery,
         useReranker,
         rerankTopK,
@@ -428,6 +442,7 @@ export default function Home() {
             </div>
           </div>
           <div className="metadata-grid">
+            <div className="metadata-chip"><span>Embedding</span><b>{search.embeddingFunction === 'voyage' ? 'Voyage' : 'Default'}</b></div>
             <div className="metadata-chip"><span>Category hint</span><b>{formatHint(search.semanticResult?.category_hint)}</b></div>
             <div className="metadata-chip"><span>Request hint</span><b>{formatHint(search.semanticResult?.request_type_hint)}</b></div>
             <div className="metadata-chip"><span>Date from</span><b>{formatDate(search.semanticResult?.extracted_filters?.date_from)}</b></div>
@@ -570,6 +585,17 @@ export default function Home() {
               <div className="api-help">
                 Adjust how closely a past ticket must match to be shown.
               </div>
+
+              <label htmlFor="embeddingFunction" style={{ marginTop: 10 }}>Embedding Function</label>
+              <select
+                id="embeddingFunction"
+                className="mode-select wide-select"
+                value={embeddingFunction}
+                onChange={(e) => setEmbeddingFunction(e.target.value as EmbeddingFunction)}
+              >
+                <option value="default">Default embeddings</option>
+                <option value="voyage">Voyage embeddings</option>
+              </select>
 
               <label className="checkbox-row" htmlFor="useEnhancedQuery">
                 <input

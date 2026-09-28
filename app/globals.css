@@ -142,7 +142,8 @@ main {
 }
 
 .theme-toggle,
-.export-btn {
+.export-btn,
+.mode-select {
   background: transparent;
   border: 1px solid var(--line);
   border-radius: 7px;
@@ -156,9 +157,17 @@ main {
 }
 
 .theme-toggle:hover,
-.export-btn:hover:not(:disabled) {
+.export-btn:hover:not(:disabled),
+.mode-select:hover {
   border-color: var(--subtle);
   color: var(--ink);
+}
+
+.wide-select {
+  background: var(--panel);
+  color: var(--ink);
+  margin-top: 0;
+  width: 100%;
 }
 
 .export-btn:disabled {
