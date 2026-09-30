@@ -593,7 +593,7 @@ export default function Home() {
                 value={embeddingFunction}
                 onChange={(e) => setEmbeddingFunction(e.target.value as EmbeddingFunction)}
               >
-                <option value="default">Default embeddings</option>
+                <option value="default">OpenAI embeddings</option>
                 <option value="voyage">Voyage embeddings</option>
               </select>
 
